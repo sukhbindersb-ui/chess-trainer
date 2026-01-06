@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chess AI & Opening Trainer</title>
+
+  <!-- Chessboard CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboardjs/1.0.0/chessboard-1.0.0.min.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .menu-box {
+      width: 350px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    #board {
+      width: 450px;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<h1>Chess AI & Opening Trainer</h1>
+
+<!-- MENU SCREEN -->
+<div id="menuScreen" class="menu-box">
+  <label>Select Opening:</label>
+  <select id="openingSelect">
+    <option value="">None (Free Play)</option>
+    <option value="ruy_lopez">Ruy Lopez</option>
+    <option value="sicilian">Sicilian Defense</option>
+    <option value="italian">Italian Game</option>
+  </select>
+
+  <label>Select Difficulty:</label>
+  <select id="difficultySelect">
+    <option value="easy">Easy (Random Moves)</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+  </select>
+
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" style="display:none;">
+  <div class="container">
+    <div id="board"></div>
+
+    <div class="sidebar">
+      <h2>Controls</h2>
+      <button onclick="resetGame()">Restart</button>
+      <button onclick="aiMove()">AI Move</button>
+      <button onclick="goBack()">Back to Menu</button>
+
+      <div id="gameInfo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- JS LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboardjs/1.0.0/chessboard-1.0.0.min.js"></script>
+
+<script>
+let board = null;
+let game = new Chess();
+let difficulty = "easy";
+let openingMoves = [];
+
+// OPENING DATA
+const openings = {
+  "ruy_lopez": {
+    name: "Ruy Lopez",
+    description: "A classic opening that fights for the center.",
+    moves: ["e4", "e5", "Nf3", "Nc6", "Bb5"]
+  },
+  "sicilian": {
+    name: "Sicilian Defense",
+    description: "A sharp counterattacking response to 1.e4.",
+    moves: ["e4", "c5"]
+  },
+  "italian": {
+    name: "Italian Game",
+    description: "A simple and strong opening.",
+    moves: ["e4", "e5", "Nf3", "Nc6", "Bc4"]
+  }
+};
+
+// START GAME
+function startGame() {
+  const opening = document.getElementById("openingSelect").value;
+  difficulty = document.getElementById("difficultySelect").value;
+
+  // Show game screen
+  document.getElementById("menuScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "block";
+
+  game.reset();
+
+  // Set opening info
+  if (opening && openings[opening]) {
+    openingMoves = openings[opening].moves;
+    document.getElementById("gameInfo").innerHTML = `
+      <h3>${openings[opening].name}</h3>
+      <p>${openings[opening].description}</p>
+    `;
+  } else {
+    openingMoves = [];
+    document.getElementById("gameInfo").innerHTML = "";
+  }
+
+  // Delay board creation so the container is visible
+  setTimeout(() => {
+    board = Chessboard('board', {
+      draggable: true,
+      position: 'start',
+      onDrop: (source, target) => {
+        let move = game.move({ from: source, to: target, promotion: 'q' });
+        if (move === null) return 'snapback';
+        setTimeout(aiMove, 300);
+      }
+    });
+
+    // Play opening moves
+    openingMoves.forEach(m => game.move(m));
+    board.position(game.fen());
+  }, 50);
+}
+
+// AI MOVE
+function aiMove() {
+  let moves = game.moves();
+  if (moves.length === 0) return;
+
+  let move;
+
+  if (difficulty === "easy") move = moves[Math.floor(Math.random() * moves.length)];
+  if (difficulty === "medium") move = moves[0];
+  if (difficulty === "hard") move = moves[moves.length - 1];
+
+  game.move(move);
+  board.position(game.fen());
+}
+
+// RESET GAME
+function resetGame() {
+  game.reset();
+  board.position("start");
+}
+
+// BACK TO MENU
+function goBack() {
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("menuScreen").style.display = "block";
+  game.reset();
+}
+</script>
+
+</body>
+</html>
